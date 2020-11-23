@@ -1,0 +1,14 @@
+[Unit]
+Description=Kite server service
+After=network.target
+StartLimitIntervalSec=30
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=10
+User=root
+ExecStart=/opt/kite-server/kite-server /opt/kite-server/config/default.json
+
+[Install]
+WantedBy=multi-user.target
