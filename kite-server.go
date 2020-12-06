@@ -139,8 +139,11 @@ func (ks *KiteServer) wsHandler(w http.ResponseWriter, r *http.Request) {
 
 				switch msg.Action {
 				case kite.NOTIFY:
-					//log.Printf("NOTIFY received -> %s", msg.Data.(string))
-					ks.endpoint.Notify(kite.Event{Data: msg.Data.(string)}, this, msg.Receiver)
+					if ks.conf.Endpoint == msg.Receiver {
+						log.Printf("NOTIFY received -> %s from %s\n", msg.Data.(string), msg.Sender)
+					} else {
+						ks.endpoint.Notify(kite.Event{Data: msg.Data.(string)}, this, msg.Receiver)
+					}
 				default:
 					log.Printf("Messsage received with unhandle action --> %s", msg.Action)
 				}
