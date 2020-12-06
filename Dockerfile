@@ -30,7 +30,7 @@ LABEL maintainer="Claude Debieux <claude@get-code.ch>"
 
 ENV port 4080
 
-EXPOSE 4080
+EXPOSE $port
 
 RUN apk add --no-cache --update bash iputils tzdata
 
