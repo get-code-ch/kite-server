@@ -6,3 +6,6 @@
 go.sum
 /config_test/
 /config_test/*
+config/default.json
+config/ssl/server.crt
+config/ssl/server.key
