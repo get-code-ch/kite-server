@@ -19,6 +19,9 @@ type ServerConf struct {
 	TelegramConf        string               `json:"telegram_conf"`
 	AuthorizedEndpoints []AuthorizedEndpoint `json:"authorized_endpoints"`
 	Endpoint            kite.Endpoint        `json:"endpoint"`
+	SetupMode           bool                 `json:"setup_mode"`
+	RedisServer         string               `json:"redis_server"`
+	RedisPassword       string               `json:"redis_password"`
 }
 
 type AuthorizedEndpoint struct {
@@ -35,6 +38,7 @@ type ConfCertificate struct {
 }
 
 const defaultConfigFile = "./config/default.json"
+const setupConfigFile = "./config/setup.json"
 
 func loadConfig(configFile string) *ServerConf {
 
@@ -42,15 +46,24 @@ func loadConfig(configFile string) *ServerConf {
 	c := new(ServerConf)
 
 	// If no config file is provided we use "hardcoded" default filepath
+	if len(os.Args) >= 2 && configFile == "" {
+		configFile = os.Args[1]
+	}
+
 	if configFile == "" {
 		configFile = defaultConfigFile
 	}
 
 	// Testing if config file exist if not, return a fatal error
-	_, err := os.Stat(configFile)
-	if err != nil {
+	if _, err := os.Stat(configFile); err != nil {
 		if os.IsNotExist(err) {
-			log.Panic(fmt.Sprintf("Config file %s not exist\n", configFile))
+			if _, err := os.Stat(setupConfigFile); err != nil {
+				if os.IsNotExist(err) {
+					log.Panic(fmt.Sprintf("Config/setup files not exist\n"))
+				}
+			} else {
+				configFile = setupConfigFile
+			}
 		} else {
 			log.Panic(fmt.Sprintf("Something wrong with config file %s -> %v\n", configFile, err))
 		}

@@ -4,6 +4,7 @@ import (
 	"errors"
 	kite "github.com/get-code-ch/kite-common"
 	"github.com/gorilla/websocket"
+	"log"
 	"sync"
 	"time"
 )
@@ -58,25 +59,31 @@ func NewEndpointObs(conn *websocket.Conn, ks *KiteServer) (*EndpointObs, error) 
 				o.endpoint.Domain = "*"
 			}
 			// Checking if endpoint is authorized (api key and enabled)
-			authorized := false
-			for _, e := range ks.conf.AuthorizedEndpoints {
-				if o.endpoint.String() == e.Endpoint.String() && e.Enabled && msg.Data == e.ApiKey {
-					authorized = true
-					break
+			if !ks.conf.SetupMode {
+				authorized := false
+				for _, e := range ks.conf.AuthorizedEndpoints {
+					if o.endpoint.String() == e.Endpoint.String() && e.Enabled && msg.Data == e.ApiKey {
+						authorized = true
+						break
+					}
 				}
-			}
-			if !authorized {
-				data := make(map[string]string)
-				data["Message"] = "unauthorized endpoint connection"
-				err = errors.New(data["Message"])
-				_ = o.conn.WriteJSON(kite.Message{Sender: ks.conf.Endpoint, Receiver: o.endpoint, Action: kite.REJECTED, Data: data})
-				o.conn.Close()
-				return nil, err
+				if !authorized {
+					data := make(map[string]string)
+					data["Message"] = "unauthorized endpoint connection"
+					err = errors.New(data["Message"])
+					_ = o.conn.WriteJSON(kite.Message{Sender: ks.conf.Endpoint, Receiver: o.endpoint, Action: kite.REJECTED, Data: data})
+					o.conn.Close()
+					return nil, err
+				}
 			}
 		}
 		// If everything is Ok, sending accept message
 		data := make(map[string]string)
-		data["Message"] = "welcome " + o.endpoint.String()
+		if ks.conf.SetupMode {
+			data["Message"] = "setup mode"
+		} else {
+			data["Message"] = "welcome " + o.endpoint.String()
+		}
 		if err := o.conn.WriteJSON(kite.Message{Sender: ks.conf.Endpoint, Receiver: o.endpoint, Action: kite.ACCEPTED, Data: data}); err != nil {
 			err = errors.New("error accepting client " + err.Error())
 			o.conn.Close()
@@ -98,8 +105,15 @@ func (o *EndpointObs) OnNotify(e kite.Event, sender kite.Observer, receiver kite
 
 		o.sync.Lock()
 		defer o.sync.Unlock()
-		o.conn.WriteJSON(msg)
+		if err := o.conn.WriteJSON(msg); err != nil {
+			log.Printf("Error sending message to %s", receiver)
+		}
 	}
+}
+
+func (o *EndpointObs) OnClose(e kite.Event) {
+	log.Printf("OnClose %s", e.Data)
+	o.conn.WriteControl(websocket.CloseMessage, []byte{}, time.Now().Add(1*time.Second))
 }
 
 func (o *EndpointObs) OnBroadcast(e kite.Event) {

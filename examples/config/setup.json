@@ -1,0 +1,14 @@
+{
+    "api_key": "ch4ng3-m3",
+    "server": "0.0.0.0",
+    "port": "9443",
+    "check_origin": false,
+    "ssl": true,
+    "setup_mode": true,
+    "cert": {
+      "ssl_key": "./config/setup.key",
+      "ssl_cert": "./config/setup.crt"
+    },
+    "redis_server": "redis",
+    "redis_password": "ch4ng3-m3"
+  }

@@ -21,32 +21,8 @@
 
   "authorized_endpoints": [
     {
-      "api_key": "bPQe0b0LtXU5He2k8f5c0LmOruuHFrFw",
-      "name": "PiZero01 (Staging)",
-      "mac_addr": "b8:27:eb:ec:6c:74",
-      "enabled": true
-    },
-    {
-      "api_key": "bPQe0b0LtXU5He2k8f5c0LmOruuHFrFw",
-      "name": "Onion (Staging)",
-      "mac_addr": "40:a3:6b:c0:9d:f6",
-      "enabled": false
-    },
-    {
-      "api_key": "bPQe0b0LtXU5He2k8f5c0LmOruuHFrFw",
-      "name": "PRECISION (Staging)",
-      "mac_addr": "a4:bb:6d:ad:5e:c4",
-      "enabled": false
-    },
-    {
-      "api_key": "bPQe0b0LtXU5He2k8f5c0LmOruuHFrFw",
-      "name": "TDH (Staging)",
-      "mac_addr": "e4:b9:7a:52:c3:90",
-      "enabled": false
-    },
-    {
       "api_key": "bPQe0b0LtXU5He2k8f5c0LmOruuHFrFu",
-      "name": "local.cli.precision.*.*",
+      "name": "local.cli.precision.cli_1.*",
       "endpoint": {
         "id": "*",
         "address": "cli_1",
@@ -58,7 +34,7 @@
     },
     {
       "api_key": "bPQe0b0LtXU5He2k8f5c0LmOruuHFrFx",
-      "name": "local.cli.precision.*.*",
+      "name": "local.cli.precision.cli_2.*",
       "endpoint": {
         "id": "*",
         "address": "cli_2",

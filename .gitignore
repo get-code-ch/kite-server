@@ -4,3 +4,5 @@
 /build/
 /build/*
 go.sum
+/config_test/
+/config_test/*
