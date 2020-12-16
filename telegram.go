@@ -51,7 +51,7 @@ func (ks *KiteServer) loadTelegramConf() {
 	}
 	ks.mux.HandleFunc(fmt.Sprintf("/tme/%s", ks.tme.WebhookPath), func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "<h1>Telegram is configured...</h1>")
-		fmt.Printf("%v", r.Body)
+		log.Printf("%v", r.Body)
 	})
 
 	// set webhook path
