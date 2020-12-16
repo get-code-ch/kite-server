@@ -16,6 +16,7 @@ type KiteServer struct {
 	conn     *websocket.Conn
 	endpoint kite.EventNotifier
 	conf     ServerConf
+	tme      TmeConf
 	srv      http.Server
 	mux      *http.ServeMux
 	wg       sync.WaitGroup
@@ -180,7 +181,7 @@ func main() {
 	configFile := ""
 	conf := loadConfig(configFile)
 	ks.conf = *conf
-	fmt.Printf("%v\n", conf)
+	//fmt.Printf("%v\n", conf)
 
 	// Initializing http server
 	ks.mux = http.NewServeMux()
@@ -191,11 +192,15 @@ func main() {
 		fmt.Fprintf(w, "<h1>kite server is running...</h1>")
 	})
 
+	ks.loadTelegramConf()
+
 	// Starting to listen and waiting connection
 	ks.wg.Add(1)
 	go ks.startServer()
 
 	// Waiting end condition
 	log.Printf("kite server %s listening on port %s\n", conf.Server, conf.Port)
+	ks.sendToTelegram(fmt.Sprintf("Server %s is listening on port %s...", ks.conf.Endpoint, ks.conf.Port))
 	ks.wg.Wait()
+	ks.sendToTelegram(fmt.Sprintf("Server %s is stopped...", ks.conf.Endpoint))
 }

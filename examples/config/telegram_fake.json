@@ -1,4 +1,5 @@
 {
   "bot_id": "bot{Your telegram bot_id}",
-  "chat_id": "{your chat_id to send notification}"
+  "chat_id": "{your chat_id to send notification}",
+  "webhook_path": "YQjU6JpXke44FXkVjAYsFHHx74tVvdqp"
 }
