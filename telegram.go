@@ -72,9 +72,8 @@ func (ks *KiteServer) loadTelegramConf() {
 func (ks *KiteServer) telegramHandler(w http.ResponseWriter, r *http.Request) {
 	//fmt.Fprintf(w, "<h1>Telegram is configured...</h1>")
 
-	body := ""
-	if _, err := fmt.Fscanf(r.Body, "%s", &body); err == nil {
-		log.Printf("%v", body)
+	if body, err := ioutil.ReadAll(r.Body); err == nil {
+		log.Printf("%s", string(body))
 	} else {
 		log.Printf("Error receiving telegram message --> %s", err)
 	}
