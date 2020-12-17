@@ -19,7 +19,7 @@ type (
 		WebhookUrl  string `json:"webhook_url"`
 	}
 
-	TmeMessage struct {
+	TmeSendMessageParam struct {
 		ChatId              int64  `json:"chat_id"`
 		Text                string `json:"text"`
 		DisableNotification bool   `json:"disable_notification"`
@@ -28,6 +28,41 @@ type (
 	TmeWebhook struct {
 		Url                string `json:"url"`
 		DropPendingUpdates bool   `json:"drop_pending_updates"`
+	}
+
+	TmeUser struct {
+		Id                      int64  `json:"id"`
+		IsBot                   bool   `json:"is_bot"`
+		FirstName               string `json:"first_name"`
+		LastName                string `json:"last_name"`
+		Username                string `json:"username"`
+		LanguageCode            string `json:"language_code"`
+		CanJoinGroups           bool   `json:"can_join_groups"`
+		CanReadAllGroupMessages bool   `json:"can_read_all_group_messages"`
+		SupportsInlineQueries   bool   `json:"supports_inline_queries"`
+	}
+
+	TmeChat struct {
+		Id          int64  `json:"id"`
+		Type        string `json:"type"`
+		Title       string `json:"title"`
+		Username    string `json:"username"`
+		FirstName   string `json:"first_name"`
+		LastName    string `json:"last_name"`
+		Bio         string `json:"bio"`
+		Description string `json:"description"`
+		// some other stuff are ignored more info --> https://core.telegram.org/bots/api#chat
+	}
+
+	TmeMessage struct {
+		MessageId       int64   `json:"message_id"`
+		From            TmeUser `json:"from"`
+		Chat            TmeChat `json:"chat"`
+		Date            int64   `json:"date"` //in Unix time format
+		ForwardFrom     TmeUser `json:"forward_from"`
+		ForwardDate     int64   `json:"forward_date"`
+		ForwardFromChat TmeChat `json:"forward_from_chat"`
+		Text            string  `json:"text"`
 	}
 )
 
@@ -73,7 +108,12 @@ func (ks *KiteServer) telegramHandler(w http.ResponseWriter, r *http.Request) {
 	//fmt.Fprintf(w, "<h1>Telegram is configured...</h1>")
 
 	if body, err := ioutil.ReadAll(r.Body); err == nil {
-		log.Printf("%s", string(body))
+		message := TmeMessage{}
+		if err := json.Unmarshal(body, message); err == nil {
+			log.Printf("Telegram message from %s %s:\n%s", message.From.FirstName, message.From.LastName, message.Text)
+		} else {
+			log.Printf("Error parsing body --> %s", err)
+		}
 	} else {
 		log.Printf("Error receiving telegram message --> %s", err)
 	}
@@ -87,7 +127,7 @@ func (ks *KiteServer) sendToTelegram(msg string) {
 	}
 
 	tmeUrl := url.URL{Host: "api.telegram.org", Scheme: "https", Path: "/" + ks.tme.BotId + "/sendMessage"}
-	tmeBody, _ := json.Marshal(TmeMessage{ChatId: ks.tme.ChatId, DisableNotification: false, Text: msg})
+	tmeBody, _ := json.Marshal(TmeSendMessageParam{ChatId: ks.tme.ChatId, DisableNotification: false, Text: msg})
 
 	if request, err := http.NewRequest("POST", tmeUrl.String(), bytes.NewBuffer(tmeBody)); err == nil {
 		request.Header.Set("Content-Type", "application/json")
