@@ -113,7 +113,7 @@ func (ks *KiteServer) loadTelegramConf() {
 }
 
 func (ks *KiteServer) telegramHandler(w http.ResponseWriter, r *http.Request) {
-	inputRe := regexp.MustCompile(`^([^\s:@]*)(?:@([^:]*))?:(.+)$`)
+	inputRe := regexp.MustCompile(`^([^:@]*)(?:@([^:]*))?:(.+)$`)
 
 	if body, err := ioutil.ReadAll(r.Body); err == nil {
 		update := TmeUpdate{}
@@ -122,7 +122,7 @@ func (ks *KiteServer) telegramHandler(w http.ResponseWriter, r *http.Request) {
 			// Parse message to send notification
 			if parsed := inputRe.FindStringSubmatch(message.Text); parsed != nil {
 				to := kite.Endpoint{Domain: "*", Type: kite.ANY, Host: "*", Address: "*", Id: "*"}
-				action := kite.Action(strings.ToLower(string(parsed[1])))
+				action := kite.Action(strings.ToLower(parsed[1]))
 				to.StringToEndpoint(string(parsed[2]))
 				if err := action.IsValid(); err == nil && action == kite.NOTIFY {
 					msg := parsed[3]
