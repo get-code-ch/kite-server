@@ -35,6 +35,7 @@ func (ks *KiteServer) setupServer(msg kite.Message, this *EndpointObs) error {
 	ks.srv.Shutdown(context.Background())
 
 	ks.conf = *loadConfig("")
+	ks.loadTelegramConf()
 
 	ks.wg.Add(1)
 	ks.startServer()

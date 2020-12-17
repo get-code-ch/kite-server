@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	kite "github.com/get-code-ch/kite-common"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
+	"strings"
 )
 
 type (
@@ -110,20 +113,30 @@ func (ks *KiteServer) loadTelegramConf() {
 }
 
 func (ks *KiteServer) telegramHandler(w http.ResponseWriter, r *http.Request) {
-	//fmt.Fprintf(w, "<h1>Telegram is configured...</h1>")
+	inputRe := regexp.MustCompile(`^([^\s:@]*)(?:@([^:]*))?:(.+)$`)
 
 	if body, err := ioutil.ReadAll(r.Body); err == nil {
 		update := TmeUpdate{}
 		if err := json.Unmarshal(body, &update); err == nil {
 			message := update.Message
-			log.Printf("Telegram %d message from %s %s:\n%s", update.UpdateId, message.From.FirstName, message.From.LastName, message.Text)
+			// Parse message to send notification
+			if parsed := inputRe.FindStringSubmatch(message.Text); parsed != nil {
+				to := kite.Endpoint{Domain: "*", Type: kite.ANY, Host: "*", Address: "*", Id: "*"}
+				action := kite.Action(strings.ToLower(string(parsed[1])))
+				to.StringToEndpoint(string(parsed[2]))
+				if err := action.IsValid(); err == nil && action == kite.NOTIFY {
+					msg := parsed[3]
+					ks.endpoint.Notify(kite.Event{Data: msg}, nil, to)
+				} else {
+					log.Printf("Telegram %d message from %s %s:\n%s", update.UpdateId, message.From.FirstName, message.From.LastName, message.Text)
+				}
+			}
 		} else {
 			log.Printf("Error parsing body --> %s", err)
 		}
 	} else {
 		log.Printf("Error receiving telegram message --> %s", err)
 	}
-
 }
 
 func (ks *KiteServer) sendToTelegram(msg string) {

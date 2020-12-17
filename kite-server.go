@@ -20,6 +20,7 @@ type KiteServer struct {
 	srv      http.Server
 	mux      *http.ServeMux
 	wg       sync.WaitGroup
+	lock     sync.Mutex
 }
 
 func (ks *KiteServer) sendPing(this *EndpointObs) {
