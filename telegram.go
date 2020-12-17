@@ -49,10 +49,8 @@ func (ks *KiteServer) loadTelegramConf() {
 			return
 		}
 	}
-	ks.mux.HandleFunc(fmt.Sprintf("/tme/%s", ks.tme.WebhookPath), func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "<h1>Telegram is configured...</h1>")
-		log.Printf("%v", r.Body)
-	})
+
+	ks.mux.HandleFunc(fmt.Sprintf("/tme/%s", ks.tme.WebhookPath), ks.telegramHandler)
 
 	// set webhook path
 	tmeUrl := url.URL{Host: "api.telegram.org", Scheme: "https", Path: "/" + ks.tme.BotId + "/setWebhook"}
@@ -67,6 +65,18 @@ func (ks *KiteServer) loadTelegramConf() {
 		}
 	} else {
 		log.Printf("Error creation http Request --> %v\n", err)
+	}
+
+}
+
+func (ks *KiteServer) telegramHandler(w http.ResponseWriter, r *http.Request) {
+	//fmt.Fprintf(w, "<h1>Telegram is configured...</h1>")
+
+	body := ""
+	if _, err := fmt.Fscanf(r.Body, "%s", &body); err == nil {
+		log.Printf("%v", body)
+	} else {
+		log.Printf("Error receiving telegram message --> %s", err)
 	}
 
 }
