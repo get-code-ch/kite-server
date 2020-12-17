@@ -64,6 +64,11 @@ type (
 		ForwardFromChat TmeChat `json:"forward_from_chat"`
 		Text            string  `json:"text"`
 	}
+
+	TmeUpdate struct {
+		UpdateId int64      `json:"update_id"`
+		Message  TmeMessage `json:"message"`
+	}
 )
 
 func (ks *KiteServer) loadTelegramConf() {
@@ -108,9 +113,10 @@ func (ks *KiteServer) telegramHandler(w http.ResponseWriter, r *http.Request) {
 	//fmt.Fprintf(w, "<h1>Telegram is configured...</h1>")
 
 	if body, err := ioutil.ReadAll(r.Body); err == nil {
-		message := TmeMessage{}
-		if err := json.Unmarshal(body, &message); err == nil {
-			log.Printf("Telegram message from %s %s:\n%s", message.From.FirstName, message.From.LastName, message.Text)
+		update := TmeUpdate{}
+		if err := json.Unmarshal(body, &update); err == nil {
+			message := update.Message
+			log.Printf("Telegram %d message from %s %s:\n%s", update.UpdateId, message.From.FirstName, message.From.LastName, message.Text)
 		} else {
 			log.Printf("Error parsing body --> %s", err)
 		}
