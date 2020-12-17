@@ -109,7 +109,7 @@ func (ks *KiteServer) telegramHandler(w http.ResponseWriter, r *http.Request) {
 
 	if body, err := ioutil.ReadAll(r.Body); err == nil {
 		message := TmeMessage{}
-		if err := json.Unmarshal(body, message); err == nil {
+		if err := json.Unmarshal(body, &message); err == nil {
 			log.Printf("Telegram message from %s %s:\n%s", message.From.FirstName, message.From.LastName, message.Text)
 		} else {
 			log.Printf("Error parsing body --> %s", err)
