@@ -93,7 +93,7 @@ func (ks *KiteServer) loadTelegramConf() {
 		}
 	}
 
-	ks.mux.HandleFunc(fmt.Sprintf("/tme/%s", ks.tme.WebhookPath), ks.telegramHandler)
+	ks.mux.HandleFunc(fmt.Sprintf("/tme/%s", ks.tme.WebhookPath), ks.telegramReceiver)
 
 	// set webhook path
 	tmeUrl := url.URL{Host: "api.telegram.org", Scheme: "https", Path: "/" + ks.tme.BotId + "/setWebhook"}
@@ -112,7 +112,7 @@ func (ks *KiteServer) loadTelegramConf() {
 
 }
 
-func (ks *KiteServer) telegramHandler(w http.ResponseWriter, r *http.Request) {
+func (ks *KiteServer) telegramReceiver(w http.ResponseWriter, r *http.Request) {
 	inputRe := regexp.MustCompile(`^([^:@]*)(?:@([^:]*))?:(.+)$`)
 
 	if body, err := ioutil.ReadAll(r.Body); err == nil {
