@@ -126,7 +126,7 @@ func (ks *KiteServer) telegramHandler(w http.ResponseWriter, r *http.Request) {
 				to.StringToEndpoint(string(parsed[2]))
 				if err := action.IsValid(); err == nil && action == kite.NOTIFY {
 					msg := parsed[3]
-					ks.endpoint.Notify(kite.Event{Data: msg}, nil, to)
+					ks.endpoint.Notify(kite.Event{Data: msg}, new(EndpointObs), to)
 				} else {
 					log.Printf("Telegram %d message from %s %s:\n%s", update.UpdateId, message.From.FirstName, message.From.LastName, message.Text)
 				}
