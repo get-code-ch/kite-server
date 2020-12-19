@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	kite "github.com/get-code-ch/kite-common"
+	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
@@ -14,6 +16,8 @@ import (
 type KiteServer struct {
 	upgrader websocket.Upgrader
 	conn     *websocket.Conn
+	rdb      *redis.Client
+	ctx      context.Context
 	endpoint kite.EventNotifier
 	conf     ServerConf
 	tme      TmeConf
@@ -182,18 +186,20 @@ func main() {
 	configFile := ""
 	conf := loadConfig(configFile)
 	ks.conf = *conf
-	//fmt.Printf("%v\n", conf)
 
 	// Initializing http server
 	ks.mux = http.NewServeMux()
-	//ks.srv = http.Server{Addr: fmt.Sprintf("%s:%s", ks.conf.Server, ks.conf.Port), Handler: ks.mux}
 
 	ks.mux.HandleFunc("/ws", ks.wsHandler)
 	ks.mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "<h1>kite server is running...</h1>")
 	})
 
-	ks.loadTelegramConf()
+	ks.ctx = context.Background()
+	ks.connectRedis()
+	ks.logToRedis("Hello World!")
+
+	ks.configureTelegram()
 
 	// Starting to listen and waiting connection
 	ks.wg.Add(1)

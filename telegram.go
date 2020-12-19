@@ -71,12 +71,14 @@ type (
 	TmeUpdate struct {
 		UpdateId int64      `json:"update_id"`
 		Message  TmeMessage `json:"message"`
+		// some other stuff are ignored more info --> https://core.telegram.org/bots/api#update
 	}
 )
 
-func (ks *KiteServer) loadTelegramConf() {
-	// Testing if config file exist if not, return a fatal error
+// configureTelegram function load telegram configuration files and configure handler for telegram Bot API
+func (ks *KiteServer) configureTelegram() {
 
+	// Testing if config file exist if not loggin an error
 	if _, err := os.Stat(ks.conf.TelegramConf); err != nil {
 		log.Printf("Error loading telegram configuration --> %v", err)
 		return
@@ -93,9 +95,10 @@ func (ks *KiteServer) loadTelegramConf() {
 		}
 	}
 
+	// Configure Telegram webhook URL to receive update
 	ks.mux.HandleFunc(fmt.Sprintf("/tme/%s", ks.tme.WebhookPath), ks.telegramReceiver)
 
-	// set webhook path
+	// Set webhook path
 	tmeUrl := url.URL{Host: "api.telegram.org", Scheme: "https", Path: "/" + ks.tme.BotId + "/setWebhook"}
 	tmeBody, _ := json.Marshal(TmeWebhook{Url: fmt.Sprintf("%s%s", ks.tme.WebhookUrl, ks.tme.WebhookPath), DropPendingUpdates: true})
 	if request, err := http.NewRequest("POST", tmeUrl.String(), bytes.NewBuffer(tmeBody)); err == nil {
@@ -104,14 +107,15 @@ func (ks *KiteServer) loadTelegramConf() {
 		if response, err := client.Do(request); err != nil {
 			log.Printf("Error sending message to Telegram --> %v\n", err)
 		} else {
-			log.Printf("Message sent to Telegram with status %d\n", response.StatusCode)
+			// normally success, response.StatusCode is 200 sent message is in response.Body
+			_ = response
 		}
 	} else {
 		log.Printf("Error creation http Request --> %v\n", err)
 	}
-
 }
 
+// telegramReceiver function handle update message from telegram bot
 func (ks *KiteServer) telegramReceiver(w http.ResponseWriter, r *http.Request) {
 	inputRe := regexp.MustCompile(`^([^:@]*)(?:@([^:]*))?:(.+)$`)
 
@@ -121,14 +125,27 @@ func (ks *KiteServer) telegramReceiver(w http.ResponseWriter, r *http.Request) {
 			message := update.Message
 			// Parse message to send notification
 			if parsed := inputRe.FindStringSubmatch(message.Text); parsed != nil {
+
+				// Initializing to endpoint
 				to := kite.Endpoint{Domain: "*", Type: kite.ANY, Host: "*", Address: "*", Id: "*"}
+
+				// Getting action
 				action := kite.Action(strings.ToLower(parsed[1]))
+
+				// setting recipient
 				to.StringToEndpoint(string(parsed[2]))
-				if err := action.IsValid(); err == nil && action == kite.NOTIFY {
+
+				// Executing received action
+				switch action {
+				case kite.NOTIFY:
 					msg := parsed[3]
 					ks.endpoint.Notify(kite.Event{Data: msg}, new(EndpointObs), to)
-				} else {
+					break
+				case kite.LOG:
 					log.Printf("Telegram %d message from %s %s:\n%s", update.UpdateId, message.From.FirstName, message.From.LastName, message.Text)
+					break
+				default:
+					log.Printf("Unhandled or unknown action %s for Telegram message from %s %s:\n%s", action, message.From.FirstName, message.From.LastName, message.Text)
 				}
 			}
 		} else {
@@ -139,6 +156,7 @@ func (ks *KiteServer) telegramReceiver(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// sendToTelegram function sending a message to telegram bot
 func (ks *KiteServer) sendToTelegram(msg string) {
 	if ks.tme == (TmeConf{}) {
 		log.Printf("Telegram bot not configured, message ignored")
@@ -154,7 +172,8 @@ func (ks *KiteServer) sendToTelegram(msg string) {
 		if response, err := client.Do(request); err != nil {
 			log.Printf("Error sending message to Telegram --> %v\n", err)
 		} else {
-			log.Printf("Message sent to Telegram with status %d\n", response.StatusCode)
+			// normally success, response.StatusCode is 200 sent message is in response.Body
+			_ = response
 		}
 	} else {
 		log.Printf("Error creation http Request --> %v\n", err)

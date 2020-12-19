@@ -6,5 +6,6 @@ replace github.com/get-code-ch/kite-common v0.0.0-20201123071344-04c362e0e627 =>
 
 require (
 	github.com/get-code-ch/kite-common v0.0.0-20201123071344-04c362e0e627
+	github.com/go-redis/redis/v8 v8.4.4
 	github.com/gorilla/websocket v1.4.2
 )

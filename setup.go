@@ -1,25 +1,27 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	kite "github.com/get-code-ch/kite-common"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 )
 
+// function setupServer get setting from client (browser or cli tools)
 func (ks *KiteServer) setupServer(msg kite.Message, this *EndpointObs) error {
+
 	data := kite.SetupMessage{}
 	data = data.SetFromInterface(msg.Data)
 
-	log.Printf("Data %v\n", data.ApiKey)
+	// we accept only setting up if Apikey is correctly configured
 	if data.ApiKey != ks.conf.ApiKey {
+		ks.endpoint.Notify(kite.Event{Data: fmt.Sprintf("Sorry, you are not authorized to setup server...")}, this, msg.Sender)
 		return errors.New("invalid ApiKey")
 	}
 
+	// Importing and saving configuration files
 	for _, file := range data.SetupFiles {
 		folder := filepath.Dir(file.Path)
 		if _, err := os.Stat(folder); err != nil {
@@ -29,16 +31,19 @@ func (ks *KiteServer) setupServer(msg kite.Message, this *EndpointObs) error {
 		}
 		ioutil.WriteFile(file.Path, file.Content, 0744)
 	}
-	ks.endpoint.Notify(kite.Event{Data: fmt.Sprintf("Server is provisionned restarting")}, this, msg.Sender)
 
+	// Sending restart notification to all clients
+	ks.endpoint.Notify(kite.Event{Data: fmt.Sprintf("Server is provisioned and is restarting...")}, this, kite.Endpoint{Domain: "*", Type: "*", Host: "*", Address: "*", Id: "*"})
 	ks.endpoint.Close(kite.Event{Data: "Setup done"})
-	ks.srv.Shutdown(context.Background())
+	ks.srv.Shutdown(ks.ctx)
 
+	// Reloading configuration
 	ks.conf = *loadConfig("")
-	ks.loadTelegramConf()
+	ks.configureTelegram()
 
 	ks.wg.Add(1)
 	ks.startServer()
+	ks.sendToTelegram("Server is provisioned and is restarting...")
 
 	return nil
 }

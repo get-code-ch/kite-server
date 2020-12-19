@@ -54,12 +54,12 @@ func loadConfig(configFile string) *ServerConf {
 		configFile = defaultConfigFile
 	}
 
-	// Testing if config file exist if not, return a fatal error
+	// Testing if config file exist if not, loading setup file and if not exist, return a fatal error
 	if _, err := os.Stat(configFile); err != nil {
 		if os.IsNotExist(err) {
 			if _, err := os.Stat(setupConfigFile); err != nil {
 				if os.IsNotExist(err) {
-					log.Panic(fmt.Sprintf("Config/setup files not exist\n"))
+					log.Panic(fmt.Sprintf("config and setup files not exists\n"))
 				}
 			} else {
 				configFile = setupConfigFile
