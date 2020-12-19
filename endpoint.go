@@ -100,7 +100,7 @@ func NewEndpointObs(conn *websocket.Conn, ks *KiteServer) (*EndpointObs, error) 
 			_ = o.conn.Close()
 			return nil, err
 		}
-
+		ks.logToRedis("log:"+o.endpoint.String(), "Connected at "+time.Now().String())
 		return o, nil
 	} else {
 		_ = o.conn.Close()
@@ -124,7 +124,7 @@ func (o *EndpointObs) OnNotify(e kite.Event, sender kite.Observer, receiver kite
 //goland:noinspection GoUnusedParameter
 func (o *EndpointObs) OnClose(e kite.Event) {
 	if err := o.conn.WriteControl(websocket.CloseMessage, []byte{}, time.Now().Add(1*time.Second)); err != nil {
-		log.Printf("Error closing connection --> %v",err)
+		log.Printf("Error closing connection --> %v", err)
 	}
 }
 

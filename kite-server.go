@@ -197,7 +197,6 @@ func main() {
 
 	ks.ctx = context.Background()
 	ks.connectRedis()
-	ks.logToRedis("Hello World!")
 
 	ks.configureTelegram()
 
