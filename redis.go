@@ -16,7 +16,7 @@ func (ks *KiteServer) connectRedis() {
 }
 
 func (ks *KiteServer) logToRedis(key string, message string) {
-	if err := ks.rdb.Set(ks.ctx, key, message, 0).Err(); err != nil {
+	if err := ks.rdb.HMSet(ks.ctx, "log", key, message, 0).Err(); err != nil {
 		log.Printf("Error logging message to redis --> %s", err)
 	}
 }
