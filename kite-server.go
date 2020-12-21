@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	kite "github.com/get-code-ch/kite-common"
-	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/websocket"
+	r "gopkg.in/rethinkdb/rethinkdb-go.v6"
 	"log"
 	"net/http"
 	"regexp"
@@ -16,7 +16,7 @@ import (
 type KiteServer struct {
 	upgrader websocket.Upgrader
 	conn     *websocket.Conn
-	rdb      *redis.Client
+	session  *r.Session
 	ctx      context.Context
 	endpoint kite.EventNotifier
 	conf     ServerConf
@@ -196,9 +196,10 @@ func main() {
 	})
 
 	ks.ctx = context.Background()
-	ks.connectRedis()
 
 	ks.configureTelegram()
+
+	ks.connectDatabase()
 
 	// Starting to listen and waiting connection
 	ks.wg.Add(1)

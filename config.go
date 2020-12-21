@@ -20,8 +20,10 @@ type ServerConf struct {
 	AuthorizedEndpoints []AuthorizedEndpoint `json:"authorized_endpoints"`
 	Endpoint            kite.Endpoint        `json:"endpoint"`
 	SetupMode           bool                 `json:"setup_mode"`
-	RedisServer         string               `json:"redis_server"`
-	RedisPassword       string               `json:"redis_password"`
+	DatabaseServer      string               `json:"database_server"`
+	DatabaseName        string               `json:"database_name"`
+	DatabaseUsername    string               `json:"database_username"`
+	DatabasePassword    string               `json:"database_password"`
 }
 
 type AuthorizedEndpoint struct {
