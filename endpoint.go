@@ -100,7 +100,6 @@ func NewEndpointObs(conn *websocket.Conn, ks *KiteServer) (*EndpointObs, error) 
 			_ = o.conn.Close()
 			return nil, err
 		}
-		ks.logToRedis(o.endpoint.String(), "Connected at "+time.Now().String())
 		return o, nil
 	} else {
 		_ = o.conn.Close()
