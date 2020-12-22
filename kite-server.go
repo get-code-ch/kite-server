@@ -5,7 +5,7 @@ import (
 	"fmt"
 	kite "github.com/get-code-ch/kite-common"
 	"github.com/gorilla/websocket"
-	r "gopkg.in/rethinkdb/rethinkdb-go.v6"
+	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"net/http"
 	"regexp"
@@ -16,8 +16,8 @@ import (
 type KiteServer struct {
 	upgrader websocket.Upgrader
 	conn     *websocket.Conn
-	session  *r.Session
 	ctx      context.Context
+	dbClient *mongo.Client
 	endpoint kite.EventNotifier
 	conf     ServerConf
 	tme      TmeConf
@@ -198,8 +198,6 @@ func main() {
 	ks.ctx = context.Background()
 
 	ks.configureTelegram()
-
-	ks.connectDatabase()
 
 	// Starting to listen and waiting connection
 	ks.wg.Add(1)

@@ -1,18 +1,26 @@
 package main
 
 import (
-	r "gopkg.in/rethinkdb/rethinkdb-go.v6"
+	"context"
+	"fmt"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
+	"time"
 )
 
 func (ks *KiteServer) connectDatabase() {
-
-	opts := r.ConnectOpts{Address: ks.conf.DatabaseServer, Database: ks.conf.DatabaseName}
-
-	if session, err := r.Connect(opts); err == nil {
-		ks.session = session
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	uri := fmt.Sprintf("mongodb+srv://%s:%s@%s/%s?retryWrites=true&w=majority",
+		ks.conf.DatabaseUsername,
+		ks.conf.DatabasePassword,
+		ks.conf.DatabaseServer,
+		ks.conf.DatabaseName)
+	if client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri)); err == nil {
+		ks.dbClient = client
 	} else {
-		ks.session = nil
-		log.Printf("Error connecting rethink database --> %v", err)
+		log.Printf("Error connecting database --> %s", err)
 	}
+
 }
