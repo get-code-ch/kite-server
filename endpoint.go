@@ -110,7 +110,7 @@ func NewEndpointObs(conn *websocket.Conn, ks *KiteServer) (*EndpointObs, error) 
 func (o *EndpointObs) OnNotify(e kite.Event, sender kite.Observer, receiver kite.Endpoint) {
 
 	if o.endpoint.Match(receiver) {
-		msg := kite.Message{Data: e.Data, Sender: sender.(*EndpointObs).endpoint, Receiver: receiver}
+		msg := kite.Message{Data: e.Data, Action: e.Action, Sender: sender.(*EndpointObs).endpoint, Receiver: receiver}
 
 		o.sync.Lock()
 		defer o.sync.Unlock()
@@ -119,6 +119,7 @@ func (o *EndpointObs) OnNotify(e kite.Event, sender kite.Observer, receiver kite
 		}
 	}
 }
+
 
 //goland:noinspection GoUnusedParameter
 func (o *EndpointObs) OnClose(e kite.Event) {

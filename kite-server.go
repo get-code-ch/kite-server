@@ -72,6 +72,12 @@ func (ks *KiteServer) waitMessage(this *EndpointObs) {
 				switch msg.Action {
 				case kite.LOG:
 					log.Printf("Log message from %s : %s", msg.Sender, msg.Data.(string))
+					ks.writeLog(msg.Data.(string), this.endpoint)
+					break
+				case kite.READLOG:
+					if logs := ks.readLog(msg.Data.(string)); logs != nil {
+						ks.endpoint.Notify(kite.Event{Data: logs, Action: kite.LOG}, this, msg.Sender)
+					}
 					break
 				case kite.SETUP:
 					if err := ks.setupServer(msg, this); err != nil {
@@ -176,6 +182,7 @@ func (ks *KiteServer) startServer() {
 }
 
 func main() {
+	var cancel context.CancelFunc
 	ks := new(KiteServer)
 
 	ks.endpoint = kite.EventNotifier{
@@ -195,9 +202,12 @@ func main() {
 		fmt.Fprintf(w, "<h1>kite server is running...</h1>")
 	})
 
-	ks.ctx = context.Background()
+	ks.ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	ks.configureTelegram()
+
+	ks.connectDatabase()
 
 	// Starting to listen and waiting connection
 	ks.wg.Add(1)
