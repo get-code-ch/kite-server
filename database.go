@@ -5,7 +5,6 @@ import (
 	"fmt"
 	kite "github.com/get-code-ch/kite-common"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
@@ -102,8 +101,8 @@ func (ks *KiteServer) activateEndpoint(activationCode string) error {
 	endpointAuthCollection := ks.db.Collection(string(kite.C_ENDPOINTAUTH))
 	query := bson.M{"activation_code": activationCode}
 	update := bson.M{"$set": bson.M{
-		"enabled": true,
-		"activation_code": bsontype.Null,
+		"enabled":         true,
+		"activation_code": nil,
 	}}
 
 	if result := endpointAuthCollection.FindOneAndUpdate(ctx, query, update); result.Err() != nil {

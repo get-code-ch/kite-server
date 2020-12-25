@@ -75,9 +75,9 @@ func NewEndpointObs(conn *websocket.Conn, ks *KiteServer) (*EndpointObs, error) 
 				authorized := false
 
 				if endpointAuth, err := ks.findEndpointAuth(o.endpoint.String()); err == nil {
-					authorized = msg.Data == endpointAuth.ApiKey && endpointAuth.Enabled
+					authorized = msg.Data.(string) == endpointAuth.ApiKey && endpointAuth.Enabled
 				} else {
-					if err == mongo.ErrNoDocuments &&  len(msg.Data.(string)) > 10 {
+					if err == mongo.ErrNoDocuments && len(msg.Data.(string)) > 10 {
 						endpointAuth = kite.EndpointAuth{}
 						endpointAuth.Enabled = false
 						endpointAuth.Name = o.endpoint.String()
@@ -132,7 +132,6 @@ func (o *EndpointObs) OnNotify(e kite.Event, sender kite.Observer, receiver kite
 		}
 	}
 }
-
 
 //goland:noinspection GoUnusedParameter
 func (o *EndpointObs) OnClose(e kite.Event) {
