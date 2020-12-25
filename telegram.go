@@ -113,6 +113,7 @@ func (ks *KiteServer) configureTelegram() {
 	} else {
 		log.Printf("Error creation http Request --> %v\n", err)
 	}
+	log.Printf("Telegram Webhook listening on /tme/%s...", ks.tme.WebhookPath)
 }
 
 // telegramReceiver function handle update message from telegram bot

@@ -1,20 +1,16 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	kite "github.com/get-code-ch/kite-common"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 )
 
 // function setupServer get setting from client (browser or cli tools)
 func (ks *KiteServer) setupServer(msg kite.Message, this *EndpointObs) error {
-
-	var endpoints []kite.EndpointAuth
 
 	data := kite.SetupMessage{}
 	data = data.SetFromInterface(msg.Data)
@@ -27,13 +23,6 @@ func (ks *KiteServer) setupServer(msg kite.Message, this *EndpointObs) error {
 
 	// Importing and saving configuration files
 	for _, file := range data.SetupFiles {
-		// Special processing for endpoints
-		if file.Path == "++endpoints++" {
-			if err := json.Unmarshal(file.Content, &endpoints); err != nil {
-				log.Printf("Error parsing endpoints --> %s", err)
-			}
-			continue
-		}
 		folder := filepath.Dir(file.Path)
 		if _, err := os.Stat(folder); err != nil {
 			if os.IsNotExist(err) {
@@ -53,10 +42,6 @@ func (ks *KiteServer) setupServer(msg kite.Message, this *EndpointObs) error {
 	ks.connectDatabase()
 	ks.configureTelegram()
 
-	// loading endpoint in database
-	for _, endpoint := range endpoints {
-		ks.upsertEndpointAuth(endpoint)
-	}
 
 	ks.wg.Add(1)
 	ks.startServer()

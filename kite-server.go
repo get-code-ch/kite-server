@@ -182,7 +182,6 @@ func (ks *KiteServer) startServer() {
 }
 
 func main() {
-	var cancel context.CancelFunc
 	ks := new(KiteServer)
 
 	ks.endpoint = kite.EventNotifier{
@@ -202,12 +201,10 @@ func main() {
 		fmt.Fprintf(w, "<h1>kite server is running...</h1>")
 	})
 
-	ks.ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	ks.configureTelegram()
+	ks.ctx = context.Background()
 
 	if !ks.conf.SetupMode {
+		ks.configureTelegram()
 		ks.connectDatabase()
 	}
 

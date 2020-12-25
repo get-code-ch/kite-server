@@ -27,6 +27,8 @@ func (ks *KiteServer) connectDatabase() {
 	} else {
 		log.Printf("Error connecting database --> %s", err)
 	}
+	log.Printf("Database %s connected...", ks.conf.DatabaseName)
+
 }
 
 func (ks *KiteServer) writeLog(message string, endpoint kite.Endpoint) {
@@ -100,7 +102,7 @@ func (ks *KiteServer) activateEndpoint(activationCode string) error {
 	endpointAuthCollection := ks.db.Collection(string(kite.C_ENDPOINTAUTH))
 	query := bson.M{"activation_code": activationCode}
 	update := bson.M{"$set": bson.M{
-		"enable": true,
+		"enabled": true,
 		"activation_code": bsontype.Null,
 	}}
 
