@@ -3,8 +3,10 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	kite "github.com/get-code-ch/kite-common"
 	"github.com/gorilla/websocket"
+	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"sync"
 	"time"
@@ -36,10 +38,10 @@ func NewEndpointObs(conn *websocket.Conn, ks *KiteServer) (*EndpointObs, error) 
 	// Get endpoint registration
 	if err := o.conn.ReadJSON(&msg); err == nil {
 		// at this point client is not registered, we accept only register action message
-		if msg.Action != kite.REGISTER {
+		if msg.Action != kite.A_REGISTER {
 			data := make(map[string]string)
 			data["Message"] = "invalid action, must be register"
-			if closeMessage, err := json.Marshal(kite.Message{Sender: ks.conf.Endpoint, Receiver: o.endpoint, Action: kite.REJECTED, Data: data}); err != nil {
+			if closeMessage, err := json.Marshal(kite.Message{Sender: ks.conf.Endpoint, Receiver: o.endpoint, Action: kite.A_REJECTED, Data: data}); err != nil {
 				_ = o.conn.WriteControl(websocket.CloseMessage, closeMessage, time.Now().Add(10*time.Second))
 			} else {
 				_ = o.conn.Close()
@@ -67,19 +69,30 @@ func NewEndpointObs(conn *websocket.Conn, ks *KiteServer) (*EndpointObs, error) 
 			if o.endpoint.Domain == "" {
 				o.endpoint.Domain = "*"
 			}
+
 			// Checking if endpoint is authorized (api key and enabled)
 			if !ks.conf.SetupMode {
 				authorized := false
-				for _, e := range ks.conf.AuthorizedEndpoints {
-					if o.endpoint.String() == e.Endpoint.String() && e.Enabled && msg.Data == e.ApiKey {
-						authorized = true
-						break
+
+				if endpointAuth, err := ks.findEndpointAuth(o.endpoint.String()); err == nil {
+					authorized = msg.Data == endpointAuth.ApiKey && endpointAuth.Enabled
+				} else {
+					if err == mongo.ErrNoDocuments &&  len(msg.Data.(string)) > 10 {
+						endpointAuth = kite.EndpointAuth{}
+						endpointAuth.Enabled = false
+						endpointAuth.Name = o.endpoint.String()
+						endpointAuth.ApiKey = msg.Data.(string)
+						endpointAuth.ActivationCode = kite.RandomString(6)
+						if err := ks.upsertEndpointAuth(endpointAuth); err == nil {
+							ks.sendToTelegram(fmt.Sprintf("New endpoint %s try to connect server, activation code is %s", endpointAuth.Name, endpointAuth.ActivationCode))
+						}
 					}
 				}
+
 				if !authorized {
 					data := make(map[string]string)
 					data["Message"] = "unauthorized endpoint connection"
-					if closeMessage, err := json.Marshal(kite.Message{Sender: ks.conf.Endpoint, Receiver: o.endpoint, Action: kite.REJECTED, Data: data}); err != nil {
+					if closeMessage, err := json.Marshal(kite.Message{Sender: ks.conf.Endpoint, Receiver: o.endpoint, Action: kite.A_REJECTED, Data: data}); err != nil {
 						_ = o.conn.WriteControl(websocket.CloseMessage, closeMessage, time.Now().Add(10*time.Second))
 					} else {
 						_ = o.conn.Close()
@@ -95,7 +108,7 @@ func NewEndpointObs(conn *websocket.Conn, ks *KiteServer) (*EndpointObs, error) 
 		} else {
 			data["Message"] = "welcome " + o.endpoint.String()
 		}
-		if err := o.conn.WriteJSON(kite.Message{Sender: ks.conf.Endpoint, Receiver: o.endpoint, Action: kite.ACCEPTED, Data: data}); err != nil {
+		if err := o.conn.WriteJSON(kite.Message{Sender: ks.conf.Endpoint, Receiver: o.endpoint, Action: kite.A_ACCEPTED, Data: data}); err != nil {
 			err = errors.New("error accepting client " + err.Error())
 			_ = o.conn.Close()
 			return nil, err

@@ -127,7 +127,7 @@ func (ks *KiteServer) telegramReceiver(w http.ResponseWriter, r *http.Request) {
 			if parsed := inputRe.FindStringSubmatch(message.Text); parsed != nil {
 
 				// Initializing to endpoint
-				to := kite.Endpoint{Domain: "*", Type: kite.ANY, Host: "*", Address: "*", Id: "*"}
+				to := kite.Endpoint{Domain: "*", Type: kite.H_ANY, Host: "*", Address: "*", Id: "*"}
 
 				// Getting action
 				action := kite.Action(strings.ToLower(parsed[1]))
@@ -137,12 +137,17 @@ func (ks *KiteServer) telegramReceiver(w http.ResponseWriter, r *http.Request) {
 
 				// Executing received action
 				switch action {
-				case kite.NOTIFY:
+				case kite.A_NOTIFY:
 					msg := parsed[3]
 					ks.endpoint.Notify(kite.Event{Data: msg}, new(EndpointObs), to)
 					break
-				case kite.LOG:
+				case kite.A_LOG:
 					log.Printf("Telegram %d message from %s %s:\n%s", update.UpdateId, message.From.FirstName, message.From.LastName, message.Text)
+					break
+				case kite.A_ACTIVATE:
+					if err := ks.activateEndpoint(parsed[3]); err == nil {
+						log.Printf("New endpoint activated")
+					}
 					break
 				default:
 					log.Printf("Unhandled or unknown action %s for Telegram message from %s %s:\n%s", action, message.From.FirstName, message.From.LastName, message.Text)

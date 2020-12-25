@@ -8,7 +8,5 @@
     "cert": {
       "ssl_key": "./config/setup.key",
       "ssl_cert": "./config/setup.crt"
-    },
-    "redis_server": "redis",
-    "redis_password": "ch4ng3-m3"
-  }
+    }
+}

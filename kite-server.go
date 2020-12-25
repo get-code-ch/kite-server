@@ -17,7 +17,7 @@ type KiteServer struct {
 	upgrader websocket.Upgrader
 	conn     *websocket.Conn
 	ctx      context.Context
-	dbClient *mongo.Client
+	db       *mongo.Database
 	endpoint kite.EventNotifier
 	conf     ServerConf
 	tme      TmeConf
@@ -56,7 +56,7 @@ func (ks *KiteServer) waitMessage(this *EndpointObs) {
 		msg := kite.Message{}
 		if err := this.conn.ReadJSON(&msg); err == nil {
 			if ks.conf.SetupMode {
-				if msg.Action == kite.SETUP {
+				if msg.Action == kite.A_SETUP {
 					if err := ks.setupServer(msg, this); err != nil {
 						ks.endpoint.Notify(kite.Event{Data: fmt.Sprintf("Error provisioning setup -> %s", err)}, this, msg.Sender)
 						log.Printf("Error provisioning setup from %s -> %s", msg.Sender, err)
@@ -70,16 +70,16 @@ func (ks *KiteServer) waitMessage(this *EndpointObs) {
 				}
 			} else {
 				switch msg.Action {
-				case kite.LOG:
+				case kite.A_LOG:
 					log.Printf("Log message from %s : %s", msg.Sender, msg.Data.(string))
 					ks.writeLog(msg.Data.(string), this.endpoint)
 					break
-				case kite.READLOG:
+				case kite.A_READLOG:
 					if logs := ks.readLog(msg.Data.(string)); logs != nil {
-						ks.endpoint.Notify(kite.Event{Data: logs, Action: kite.LOG}, this, msg.Sender)
+						ks.endpoint.Notify(kite.Event{Data: logs, Action: kite.A_LOG}, this, msg.Sender)
 					}
 					break
-				case kite.SETUP:
+				case kite.A_SETUP:
 					if err := ks.setupServer(msg, this); err != nil {
 						ks.endpoint.Notify(kite.Event{Data: fmt.Sprintf("Error provisioning setup -> %s", err)}, this, msg.Sender)
 						log.Printf("Error provisioning setup from %s -> %s", msg.Sender, err)
@@ -207,7 +207,9 @@ func main() {
 
 	ks.configureTelegram()
 
-	ks.connectDatabase()
+	if !ks.conf.SetupMode {
+		ks.connectDatabase()
+	}
 
 	// Starting to listen and waiting connection
 	ks.wg.Add(1)
