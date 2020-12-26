@@ -113,7 +113,7 @@ func (ks *KiteServer) wsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Configuring check CORS (in production mode CORS should be on)
 	ks.upgrader.CheckOrigin = func(r *http.Request) bool {
-		re := regexp.MustCompile(`(?i)(?:[http|ws][s]?:\/\/)([^/]*)`)
+		re := regexp.MustCompile(`(?i)(?:(?:http|ws)[s]?://)([^/]*)`)
 		rHost := re.FindStringSubmatch(r.Header.Get("origin"))
 		if len(rHost) != 2 {
 			return false
@@ -141,6 +141,8 @@ func (ks *KiteServer) wsHandler(w http.ResponseWriter, r *http.Request) {
 	this, err := NewEndpointObs(conn, ks)
 	if err != nil {
 		log.Printf("Endpoint creation error --> %v", err)
+		this.conn.Close()
+		ks.endpoint.Deregister(this)
 		return
 	}
 
