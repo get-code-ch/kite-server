@@ -102,7 +102,7 @@ func (ks *KiteServer) activateEndpoint(activationCode string) error {
 	query := bson.M{"activation_code": activationCode}
 	update := bson.M{"$set": bson.M{
 		"enabled":         true,
-		"activation_code": nil,
+		"activation_code": "",
 	}}
 
 	if result := endpointAuthCollection.FindOneAndUpdate(ctx, query, update); result.Err() != nil {

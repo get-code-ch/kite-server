@@ -85,8 +85,9 @@ func NewEndpointObs(conn *websocket.Conn, ks *KiteServer) (*EndpointObs, error) 
 						endpointAuth.ActivationCode = kite.RandomString(6)
 						if err := ks.upsertEndpointAuth(endpointAuth); err == nil {
 							data := make(map[string]string)
-							data["Message"] = "new endpoint %s try to connect server"
-							ks.sendToTelegram(fmt.Sprintf("new endpoint %s try to connect server, activation code is %s", endpointAuth.Name, endpointAuth.ActivationCode))
+							data["Message"] = fmt.Sprintf("new endpoint %s try to connect server, activation code %s", endpointAuth.Name, endpointAuth.ActivationCode)
+							ks.sendToTelegram(data["Message"])
+							ks.endpoint.Notify(kite.Event{Data: data["Message"]}, new(EndpointObs), kite.Endpoint{Domain: "*", Type: "*", Host: "*", Address: "*", Id: "*"})
 							return nil, errors.New(data["Message"])
 						}
 					}

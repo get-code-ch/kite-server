@@ -88,6 +88,11 @@ func (ks *KiteServer) waitMessage(this *EndpointObs) {
 						log.Printf("Server setup successfully provisioned from %s", msg.Sender)
 					}
 					break
+				case kite.A_ACTIVATE:
+					if err := ks.activateEndpoint(msg.Data.(string)); err == nil {
+						log.Printf("New endpoint activated")
+					}
+					break
 				default:
 					ks.endpoint.Notify(kite.Event{Data: msg.Data.(string)}, this, msg.Receiver)
 					if ks.conf.Endpoint.Match(msg.Receiver) {
@@ -141,8 +146,8 @@ func (ks *KiteServer) wsHandler(w http.ResponseWriter, r *http.Request) {
 	this, err := NewEndpointObs(conn, ks)
 	if err != nil {
 		log.Printf("Endpoint creation error --> %v", err)
-		this.conn.Close()
-		ks.endpoint.Deregister(this)
+		conn.WriteControl(websocket.CloseMessage, []byte(""),time.Now().Add(10*time.Second))
+		conn.Close()
 		return
 	}
 
