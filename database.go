@@ -30,12 +30,12 @@ func (ks *KiteServer) connectDatabase() {
 
 }
 
-func (ks *KiteServer) writeLog(message string, endpoint kite.Endpoint) {
+func (ks *KiteServer) writeLog(message string, address kite.Address) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	logMessageCollection := ks.db.Collection(string(kite.C_LOG))
-	logMessage := kite.LogMessage{Endpoint: endpoint.String(), Message: message, Time: time.Now()}
+	logMessage := kite.LogMessage{Address: address.String(), Message: message, Time: time.Now()}
 
 	if _, err := logMessageCollection.InsertOne(ctx, logMessage); err != nil {
 		log.Printf("Error logging message to database --> %s", err)
@@ -49,7 +49,7 @@ func (ks *KiteServer) readLog(filter string) []kite.LogMessage {
 
 	query := bson.D{
 		{"$or", []interface{}{
-			bson.D{{"endpoint", bson.D{{"$regex", filter}}}},
+			bson.D{{"address", bson.D{{"$regex", filter}}}},
 			bson.D{{"message", bson.D{{"$regex", filter}}}},
 		}},
 	}
@@ -63,49 +63,49 @@ func (ks *KiteServer) readLog(filter string) []kite.LogMessage {
 	return nil
 }
 
-func (ks *KiteServer) upsertEndpointAuth(endpoint kite.EndpointAuth) error {
+func (ks *KiteServer) upsertAddressAuth(address kite.AddressAuth) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	endpointAuthCollection := ks.db.Collection(string(kite.C_ENDPOINTAUTH))
+	addressAuthCollection := ks.db.Collection(string(kite.C_ADDRESSAUTH))
 
-	update := bson.M{"$set": endpoint}
+	update := bson.M{"$set": address}
 	opts := options.Update().SetUpsert(true)
 
-	if _, err := endpointAuthCollection.UpdateOne(ctx, bson.D{{"name", endpoint.Name}}, update, opts); err != nil {
+	if _, err := addressAuthCollection.UpdateOne(ctx, bson.D{{"name", address.Name}}, update, opts); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (ks *KiteServer) findEndpointAuth(endpoint string) (kite.EndpointAuth, error) {
-	var endpointAuth kite.EndpointAuth
+func (ks *KiteServer) findAddressAuth(address string) (kite.AddressAuth, error) {
+	var addressAuth kite.AddressAuth
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	endpointAuthCollection := ks.db.Collection(string(kite.C_ENDPOINTAUTH))
+	addressAuthCollection := ks.db.Collection(string(kite.C_ADDRESSAUTH))
 
-	query := bson.M{"name": endpoint}
+	query := bson.M{"name": address}
 
-	if err := endpointAuthCollection.FindOne(ctx, query).Decode(&endpointAuth); err != nil {
-		return kite.EndpointAuth{Name: "", ApiKey: "", Enabled: false}, err
+	if err := addressAuthCollection.FindOne(ctx, query).Decode(&addressAuth); err != nil {
+		return kite.AddressAuth{Name: "", ApiKey: "", Enabled: false}, err
 	}
-	return endpointAuth, nil
+	return addressAuth, nil
 }
 
-func (ks *KiteServer) activateEndpoint(activationCode string) error {
+func (ks *KiteServer) activateAddress(activationCode string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	endpointAuthCollection := ks.db.Collection(string(kite.C_ENDPOINTAUTH))
+	addressAuthCollection := ks.db.Collection(string(kite.C_ADDRESSAUTH))
 	query := bson.M{"activation_code": activationCode}
 	update := bson.M{"$set": bson.M{
 		"enabled":         true,
 		"activation_code": "",
 	}}
 
-	if result := endpointAuthCollection.FindOneAndUpdate(ctx, query, update); result.Err() != nil {
+	if result := addressAuthCollection.FindOneAndUpdate(ctx, query, update); result.Err() != nil {
 		return result.Err()
 	}
 

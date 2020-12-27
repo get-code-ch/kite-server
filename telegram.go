@@ -127,27 +127,27 @@ func (ks *KiteServer) telegramReceiver(w http.ResponseWriter, r *http.Request) {
 			// Parse message to send notification
 			if parsed := inputRe.FindStringSubmatch(message.Text); parsed != nil {
 
-				// Initializing to endpoint
-				to := kite.Endpoint{Domain: "*", Type: kite.H_ANY, Host: "*", Address: "*", Id: "*"}
+				// Initializing to address
+				to := kite.Address{Domain: "*", Type: kite.H_ANY, Host: "*", Address: "*", Id: "*"}
 
 				// Getting action
 				action := kite.Action(strings.ToLower(parsed[1]))
 
 				// setting recipient
-				to.StringToEndpoint(string(parsed[2]))
+				to.StringToAddress(string(parsed[2]))
 
 				// Executing received action
 				switch action {
 				case kite.A_NOTIFY:
 					msg := parsed[3]
-					ks.endpoint.Notify(kite.Event{Data: msg}, new(EndpointObs), to)
+					ks.address.Notify(kite.Event{Data: msg}, new(AddressObs), to)
 					break
 				case kite.A_LOG:
 					log.Printf("Telegram %d message from %s %s:\n%s", update.UpdateId, message.From.FirstName, message.From.LastName, message.Text)
 					break
 				case kite.A_ACTIVATE:
-					if err := ks.activateEndpoint(parsed[3]); err == nil {
-						log.Printf("New endpoint activated")
+					if err := ks.activateAddress(parsed[3]); err == nil {
+						log.Printf("New address activated")
 					}
 					break
 				default:

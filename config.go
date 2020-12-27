@@ -10,28 +10,19 @@ import (
 )
 
 type ServerConf struct {
-	ApiKey              string               `json:"api_key"`
-	Server              string               `json:"server"`
-	Port                string               `json:"port"`
-	CheckOrigin         bool                 `json:"check_origin"`
-	Ssl                 bool                 `json:"ssl"`
-	Cert                ConfCertificate      `json:"cert,omitempty"`
-	TelegramConf        string               `json:"telegram_conf"`
-	AuthorizedEndpoints []AuthorizedEndpoint `json:"authorized_endpoints"`
-	Endpoint            kite.Endpoint        `json:"endpoint"`
-	SetupMode           bool                 `json:"setup_mode"`
-	DatabaseServer      string               `json:"database_server"`
-	DatabaseName        string               `json:"database_name"`
-	DatabaseUsername    string               `json:"database_username"`
-	DatabasePassword    string               `json:"database_password"`
-}
-
-type AuthorizedEndpoint struct {
-	ApiKey   string        `json:"api_key"`
-	Name     string        `json:"name"`
-	MacAddr  string        `json:"mac_addr"`
-	Enabled  bool          `json:"enabled"`
-	Endpoint kite.Endpoint `json:"endpoint"`
+	ApiKey           string          `json:"api_key"`
+	Server           string          `json:"server"`
+	Port             string          `json:"port"`
+	CheckOrigin      bool            `json:"check_origin"`
+	Ssl              bool            `json:"ssl"`
+	Cert             ConfCertificate `json:"cert,omitempty"`
+	TelegramConf     string          `json:"telegram_conf"`
+	Address          kite.Address    `json:"address"`
+	SetupMode        bool            `json:"setup_mode"`
+	DatabaseServer   string          `json:"database_server"`
+	DatabaseName     string          `json:"database_name"`
+	DatabaseUsername string          `json:"database_username"`
+	DatabasePassword string          `json:"database_password"`
 }
 
 type ConfCertificate struct {

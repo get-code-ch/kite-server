@@ -10,14 +10,14 @@ import (
 )
 
 // function setupServer get setting from client (browser or cli tools)
-func (ks *KiteServer) setupServer(msg kite.Message, this *EndpointObs) error {
+func (ks *KiteServer) setupServer(msg kite.Message, this *AddressObs) error {
 
 	data := kite.SetupMessage{}
 	data = data.SetFromInterface(msg.Data)
 
 	// we accept only setting up if Apikey is correctly configured
 	if data.ApiKey != ks.conf.ApiKey {
-		ks.endpoint.Notify(kite.Event{Data: fmt.Sprintf("Sorry, you are not authorized to setup server...")}, this, msg.Sender)
+		ks.address.Notify(kite.Event{Data: fmt.Sprintf("Sorry, you are not authorized to setup server...")}, this, msg.Sender)
 		return errors.New("invalid ApiKey")
 	}
 
@@ -33,8 +33,8 @@ func (ks *KiteServer) setupServer(msg kite.Message, this *EndpointObs) error {
 	}
 
 	// Sending restart notification to all clients
-	ks.endpoint.Notify(kite.Event{Data: fmt.Sprintf("Server is provisioned and is restarting...")}, this, kite.Endpoint{Domain: "*", Type: "*", Host: "*", Address: "*", Id: "*"})
-	ks.endpoint.Close(kite.Event{Data: "Setup done"})
+	ks.address.Notify(kite.Event{Data: fmt.Sprintf("Server is provisioned and is restarting...")}, this, kite.Address{Domain: "*", Type: "*", Host: "*", Address: "*", Id: "*"})
+	ks.address.Close(kite.Event{Data: "Setup done"})
 	ks.srv.Shutdown(ks.ctx)
 
 	// Reloading configuration

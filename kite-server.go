@@ -18,7 +18,7 @@ type KiteServer struct {
 	conn     *websocket.Conn
 	ctx      context.Context
 	db       *mongo.Database
-	endpoint kite.EventNotifier
+	address  kite.EventNotifier
 	conf     ServerConf
 	tme      TmeConf
 	srv      http.Server
@@ -27,7 +27,7 @@ type KiteServer struct {
 	lock     sync.Mutex
 }
 
-func (ks *KiteServer) sendPing(this *EndpointObs) {
+func (ks *KiteServer) sendPing(this *AddressObs) {
 	defer ks.wg.Done()
 	sentinel := make(chan bool)
 
@@ -35,9 +35,9 @@ func (ks *KiteServer) sendPing(this *EndpointObs) {
 	for {
 		select {
 		case <-ticker:
-			if err := this.conn.WriteControl(websocket.PingMessage, []byte(fmt.Sprint(ks.conf.Endpoint)), time.Now().Add(1*time.Second)); err != nil {
+			if err := this.conn.WriteControl(websocket.PingMessage, []byte(fmt.Sprint(ks.conf.Address)), time.Now().Add(1*time.Second)); err != nil {
 				log.Printf("Error pinging peer --> %v", err)
-				ks.endpoint.Deregister(this)
+				ks.address.Deregister(this)
 				this.conn.Close()
 				return
 			}
@@ -48,7 +48,7 @@ func (ks *KiteServer) sendPing(this *EndpointObs) {
 	}
 }
 
-func (ks *KiteServer) waitMessage(this *EndpointObs) {
+func (ks *KiteServer) waitMessage(this *AddressObs) {
 
 	defer ks.wg.Done()
 
@@ -58,44 +58,44 @@ func (ks *KiteServer) waitMessage(this *EndpointObs) {
 			if ks.conf.SetupMode {
 				if msg.Action == kite.A_SETUP {
 					if err := ks.setupServer(msg, this); err != nil {
-						ks.endpoint.Notify(kite.Event{Data: fmt.Sprintf("Error provisioning setup -> %s", err)}, this, msg.Sender)
+						ks.address.Notify(kite.Event{Data: fmt.Sprintf("Error provisioning setup -> %s", err)}, this, msg.Sender)
 						log.Printf("Error provisioning setup from %s -> %s", msg.Sender, err)
 					} else {
-						ks.endpoint.Notify(kite.Event{Data: "Server setup successfully provisioned"}, this, msg.Sender)
+						ks.address.Notify(kite.Event{Data: "Server setup successfully provisioned"}, this, msg.Sender)
 						log.Printf("Server setup successfully provisioned from %s", msg.Sender)
 					}
 				} else {
-					ks.endpoint.Notify(kite.Event{Data: fmt.Sprintf("%s action rejected in setup mode", msg.Action)}, this, msg.Sender)
+					ks.address.Notify(kite.Event{Data: fmt.Sprintf("%s action rejected in setup mode", msg.Action)}, this, msg.Sender)
 					log.Printf("%s action ignored in setup mode", msg.Action)
 				}
 			} else {
 				switch msg.Action {
 				case kite.A_LOG:
 					log.Printf("Log message from %s : %s", msg.Sender, msg.Data.(string))
-					ks.writeLog(msg.Data.(string), this.endpoint)
+					ks.writeLog(msg.Data.(string), this.address)
 					break
 				case kite.A_READLOG:
 					if logs := ks.readLog(msg.Data.(string)); logs != nil {
-						ks.endpoint.Notify(kite.Event{Data: logs, Action: kite.A_LOG}, this, msg.Sender)
+						ks.address.Notify(kite.Event{Data: logs, Action: kite.A_LOG}, this, msg.Sender)
 					}
 					break
 				case kite.A_SETUP:
 					if err := ks.setupServer(msg, this); err != nil {
-						ks.endpoint.Notify(kite.Event{Data: fmt.Sprintf("Error provisioning setup -> %s", err)}, this, msg.Sender)
+						ks.address.Notify(kite.Event{Data: fmt.Sprintf("Error provisioning setup -> %s", err)}, this, msg.Sender)
 						log.Printf("Error provisioning setup from %s -> %s", msg.Sender, err)
 					} else {
-						ks.endpoint.Notify(kite.Event{Data: "Server setup successfully provisioned"}, this, msg.Sender)
+						ks.address.Notify(kite.Event{Data: "Server setup successfully provisioned"}, this, msg.Sender)
 						log.Printf("Server setup successfully provisioned from %s", msg.Sender)
 					}
 					break
 				case kite.A_ACTIVATE:
-					if err := ks.activateEndpoint(msg.Data.(string)); err == nil {
-						log.Printf("New endpoint activated")
+					if err := ks.activateAddress(msg.Data.(string)); err == nil {
+						log.Printf("New address activated")
 					}
 					break
 				default:
-					ks.endpoint.Notify(kite.Event{Data: msg.Data.(string)}, this, msg.Receiver)
-					if ks.conf.Endpoint.Match(msg.Receiver) {
+					ks.address.Notify(kite.Event{Data: msg.Data.(string)}, this, msg.Receiver)
+					if ks.conf.Address.Match(msg.Receiver) {
 						log.Printf("%s Action received -> %s from %s to %s\n", msg.Action, msg.Data.(string), msg.Sender, msg.Receiver)
 					}
 				}
@@ -103,7 +103,7 @@ func (ks *KiteServer) waitMessage(this *EndpointObs) {
 
 		} else {
 			log.Printf("Error receiving message --> %v", err)
-			ks.endpoint.Deregister(this)
+			ks.address.Deregister(this)
 			this.conn.Close()
 			return
 		}
@@ -142,21 +142,21 @@ func (ks *KiteServer) wsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Adding new endpoint
-	this, err := NewEndpointObs(conn, ks)
+	// Adding new address
+	this, err := NewAddressObs(conn, ks)
 	if err != nil {
-		log.Printf("Endpoint creation error --> %v", err)
+		log.Printf("Address creation error --> %v", err)
 		conn.WriteControl(websocket.CloseMessage, []byte(""),time.Now().Add(10*time.Second))
 		conn.Close()
 		return
 	}
 
 	conn.SetCloseHandler(func(code int, text string) error {
-		ks.endpoint.Deregister(this)
+		ks.address.Deregister(this)
 		return nil
 	})
 
-	ks.endpoint.Register(this)
+	ks.address.Register(this)
 
 	// Sending a keep alive ping every minute
 	ks.wg.Add(1)
@@ -191,7 +191,7 @@ func (ks *KiteServer) startServer() {
 func main() {
 	ks := new(KiteServer)
 
-	ks.endpoint = kite.EventNotifier{
+	ks.address = kite.EventNotifier{
 		Observers: map[kite.Observer]struct{}{},
 	}
 
@@ -221,7 +221,7 @@ func main() {
 
 	// Waiting end condition
 	log.Printf("kite server %s listening on port %s\n", conf.Server, conf.Port)
-	ks.sendToTelegram(fmt.Sprintf("Server %s is listening on port %s...", ks.conf.Endpoint, ks.conf.Port))
+	ks.sendToTelegram(fmt.Sprintf("Server %s is listening on port %s...", ks.conf.Address, ks.conf.Port))
 	ks.wg.Wait()
-	ks.sendToTelegram(fmt.Sprintf("Server %s is stopped...", ks.conf.Endpoint))
+	ks.sendToTelegram(fmt.Sprintf("Server %s is stopped...", ks.conf.Address))
 }
