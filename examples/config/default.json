@@ -17,6 +17,6 @@
     "domain":"local"
   },
 
-  "telegram_conf": "./config/telegram.json",
+  "telegram_conf": "./config/telegram.json"
 }
 
