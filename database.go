@@ -86,7 +86,21 @@ func (ks *KiteServer) findAddressAuth(address string) (kite.AddressAuth, error) 
 
 	addressAuthCollection := ks.db.Collection(string(kite.C_ADDRESSAUTH))
 
-	query := bson.M{"name": address}
+	a := new(kite.Address)
+	a.StringToAddress(address)
+
+	regexAddress := `^`
+	regexAddress +=  a.Domain + `\.`
+	regexAddress +=  a.Type.String() + `\.`
+	regexAddress += a.Host +  `\.`
+	if a.Address == "*" {
+		a.Address = `\*`
+	}
+	regexAddress += `(?:\*|` + a.Address + `)\.\*`
+	regexAddress += `$`
+
+	query := bson.D{{ "name", bson.D{{"$regex", regexAddress}} }}
+
 
 	if err := addressAuthCollection.FindOne(ctx, query).Decode(&addressAuth); err != nil {
 		return kite.AddressAuth{Name: "", ApiKey: "", Enabled: false}, err
@@ -111,3 +125,32 @@ func (ks *KiteServer) activateAddress(activationCode string) error {
 
 	return nil
 }
+
+func (ks *KiteServer) findEndpoint(address kite.Address) ([]kite.Endpoint, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	endpointCollection := ks.db.Collection(string(kite.C_ENDPOINT))
+
+	regexAddress := `^`
+	regexAddress +=  address.Domain + `\.`
+	regexAddress +=  kite.H_ENDPOINT.String() + `\.`
+	regexAddress += address.Host +  `\..*$`
+
+	query := bson.D{{ "name", bson.D{{"$regex", regexAddress}} }}
+
+
+	if cursor, err := endpointCollection.Find(ctx, query); err != nil {
+		return nil, err
+	} else {
+		var endpoints []kite.Endpoint
+		for cursor.Next(ctx) {
+			endpoint := kite.Endpoint{}
+			if err := cursor.Decode(&endpoint); err == nil {
+				endpoints = append(endpoints, endpoint)
+			}
+		}
+		return endpoints,nil
+	}
+}
+

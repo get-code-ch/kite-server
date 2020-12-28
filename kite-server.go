@@ -35,12 +35,15 @@ func (ks *KiteServer) sendPing(this *AddressObs) {
 	for {
 		select {
 		case <-ticker:
+			ks.lock.Lock()
 			if err := this.conn.WriteControl(websocket.PingMessage, []byte(fmt.Sprint(ks.conf.Address)), time.Now().Add(1*time.Second)); err != nil {
 				log.Printf("Error pinging peer --> %v", err)
+				ks.lock.Unlock()
 				ks.address.Deregister(this)
 				this.conn.Close()
 				return
 			}
+			ks.lock.Unlock()
 			break
 		case <-sentinel:
 			return
@@ -157,6 +160,11 @@ func (ks *KiteServer) wsHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	ks.address.Register(this)
+
+	// If client is of type Iot we provisioning configuration of it
+	if this.address.Type == kite.H_IOT {
+		ks.iotProvisioning(this)
+	}
 
 	// Sending a keep alive ping every minute
 	ks.wg.Add(1)

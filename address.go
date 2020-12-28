@@ -80,6 +80,13 @@ func NewAddressObs(conn *websocket.Conn, ks *KiteServer) (*AddressObs, error) {
 					if err == mongo.ErrNoDocuments && len(msg.Data.(string)) > 10 {
 						addressAuth = kite.AddressAuth{}
 						addressAuth.Enabled = false
+
+						// If host type is endpoint we creating authorization for host only
+						if o.address.Type == kite.H_ENDPOINT {
+							o.address.Address = "*"
+							o.address.Id = "*"
+						}
+
 						addressAuth.Name = o.address.String()
 						addressAuth.ApiKey = msg.Data.(string)
 						addressAuth.ActivationCode = kite.RandomString(6)
@@ -117,6 +124,7 @@ func NewAddressObs(conn *websocket.Conn, ks *KiteServer) (*AddressObs, error) {
 			_ = o.conn.Close()
 			return nil, err
 		}
+		// Everything is Ok, we return observable object
 		return o, nil
 	} else {
 		_ = o.conn.Close()
