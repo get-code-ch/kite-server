@@ -75,7 +75,7 @@ func (ks *KiteServer) waitMessage(this *AddressObs) {
 				switch msg.Action {
 				case kite.A_LOG:
 					log.Printf("Log message from %s : %s", msg.Sender, msg.Data.(string))
-					ks.writeLog(msg.Data.(string), this.address)
+					ks.writeLog(msg.Data.(string), msg.Sender)
 					break
 				case kite.A_READLOG:
 					if logs := ks.readLog(msg.Data.(string)); logs != nil {
