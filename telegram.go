@@ -102,7 +102,7 @@ func (ks *KiteServer) configureTelegram() {
 	tmeUrl := url.URL{Host: "api.telegram.org", Scheme: "https", Path: "/" + ks.tme.BotId + "/setWebhook"}
 	tmeBody, _ := json.Marshal(TmeWebhook{Url: fmt.Sprintf("%s%s", ks.tme.WebhookUrl, ks.tme.WebhookPath), DropPendingUpdates: true})
 	if request, err := http.NewRequest("POST", tmeUrl.String(), bytes.NewBuffer(tmeBody)); err == nil {
-		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("Content-icRef", "application/json")
 		client := &http.Client{}
 		if response, err := client.Do(request); err != nil {
 			log.Printf("Error sending message to Telegram --> %v\n", err)
@@ -173,7 +173,7 @@ func (ks *KiteServer) sendToTelegram(msg string) {
 	tmeBody, _ := json.Marshal(TmeSendMessageParam{ChatId: ks.tme.ChatId, DisableNotification: false, Text: msg})
 
 	if request, err := http.NewRequest("POST", tmeUrl.String(), bytes.NewBuffer(tmeBody)); err == nil {
-		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("Content-icRef", "application/json")
 		client := &http.Client{}
 		if response, err := client.Do(request); err != nil {
 			log.Printf("Error sending message to Telegram --> %v\n", err)

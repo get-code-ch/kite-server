@@ -146,14 +146,16 @@ func (o *AddressObs) OnNotify(e kite.Event, sender kite.Observer, receiver kite.
 
 //goland:noinspection GoUnusedParameter
 func (o *AddressObs) OnClose(e kite.Event) {
+	o.sync.Lock()
+	defer o.sync.Unlock()
 	if err := o.conn.WriteControl(websocket.CloseMessage, []byte{}, time.Now().Add(1*time.Second)); err != nil {
 		log.Printf("Error closing connection --> %v", err)
 	}
 }
 
-func (o *AddressObs) OnBroadcast(e kite.Event) {
-	log.Printf("OnBroadcast not yet implemented, message to send --> %v", e.Data)
-}
+//func (o *AddressObs) OnBroadcast(e kite.Event) {
+//	log.Printf("OnBroadcast not yet implemented, message to send --> %v", e.Data)
+//}
 
 func (o *AddressObs) Key() interface{} {
 	return o.address
