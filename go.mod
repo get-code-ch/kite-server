@@ -2,7 +2,7 @@ module github.com/get-code-ch/kite-server
 
 go 1.15
 
-replace github.com/get-code-ch/kite-common v0.0.0 => D:/projects/kite-common
+replace github.com/get-code-ch/kite-common  => D:/projects/kite-common
 
 require (
 	github.com/get-code-ch/kite-common v0.0.0
