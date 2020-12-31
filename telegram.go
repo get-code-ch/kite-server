@@ -138,7 +138,7 @@ func (ks *KiteServer) telegramReceiver(w http.ResponseWriter, r *http.Request) {
 				action := kite.Action(strings.ToLower(parsed[1]))
 
 				// setting recipient
-				to.StringToAddress(string(parsed[2]))
+				to.StringToAddress(parsed[2])
 
 				// Executing received action
 				switch action {
@@ -157,6 +157,7 @@ func (ks *KiteServer) telegramReceiver(w http.ResponseWriter, r *http.Request) {
 				case kite.A_CMD:
 					data := parsed[3]
 					ks.address.Notify(kite.Event{Data: data, Action: kite.A_CMD}, new(AddressObs), to)
+					break
 				default:
 					log.Printf("Unhandled or unknown action %s for Telegram message from %s %s:\n%s", action, message.From.FirstName, message.From.LastName, message.Text)
 				}
