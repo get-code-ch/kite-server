@@ -97,9 +97,13 @@ func (ks *KiteServer) waitMessage(this *AddressObs) {
 					}
 					break
 				default:
-					ks.address.Notify(kite.Event{Data: message.Data.(string), Action: message.Action}, this, message.Receiver)
-					if ks.conf.Address.Match(message.Receiver) {
-						log.Printf("%s Action received -> %s from %s to %s\n", message.Action, message.Data.(string), message.Sender, message.Receiver)
+					if message.Receiver.Domain == "telegram" {
+						ks.sendToTelegram(message.Data.(string))
+					} else {
+						ks.address.Notify(kite.Event{Data: message.Data.(string), Action: message.Action}, this, message.Receiver)
+						if ks.conf.Address.Match(message.Receiver) {
+							log.Printf("%s Action received -> %s from %s to %s\n", message.Action, message.Data.(string), message.Sender, message.Receiver)
+						}
 					}
 				}
 			}

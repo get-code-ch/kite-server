@@ -95,6 +95,9 @@ func (ks *KiteServer) configureTelegram() {
 		}
 	}
 
+	if ks.tme.WebhookPath == "" || ks.tme.WebhookUrl == "" {
+		return
+	}
 	// Configure Telegram webhook URL to receive update
 	ks.mux.HandleFunc(fmt.Sprintf("/tme/%s", ks.tme.WebhookPath), ks.telegramReceiver)
 
@@ -173,13 +176,15 @@ func (ks *KiteServer) sendToTelegram(msg string) {
 	tmeBody, _ := json.Marshal(TmeSendMessageParam{ChatId: ks.tme.ChatId, DisableNotification: false, Text: msg})
 
 	if request, err := http.NewRequest("POST", tmeUrl.String(), bytes.NewBuffer(tmeBody)); err == nil {
-		request.Header.Set("Content-icRef", "application/json")
+		request.Header.Set("Content-Type", "application/json")
 		client := &http.Client{}
 		if response, err := client.Do(request); err != nil {
 			log.Printf("Error sending message to Telegram --> %v\n", err)
 		} else {
 			// normally success, response.StatusCode is 200 sent message is in response.Body
-			_ = response
+			if response.StatusCode != 200 {
+				log.Printf("Not Ok message from telegram --> code %d:%s", response.StatusCode, response.Status)
+			}
 		}
 	} else {
 		log.Printf("Error creation http Request --> %v\n", err)
