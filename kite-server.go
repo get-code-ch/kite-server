@@ -80,7 +80,7 @@ func (ks *KiteServer) waitMessage(this *AddressObs) {
 				case kite.A_VALUE:
 					ks.address.Notify(kite.Event{Data: message.Data, Action: message.Action}, this, message.Receiver)
 					if ks.conf.Address.Match(message.Receiver) {
-						log.Printf("%s Action received -> %s from %s to %s\n", message.Action, message.Data.(string), message.Sender, message.Receiver)
+						log.Printf("%s Action received -> %v from %s to %s\n", message.Action, message.Data, message.Sender, message.Receiver)
 					}
 				case kite.A_READLOG:
 					if logs := ks.readLog(message.Data.(string)); logs != nil {
