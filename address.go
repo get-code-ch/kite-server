@@ -48,6 +48,9 @@ func NewAddressObs(conn *websocket.Conn, ks *KiteServer) (*AddressObs, error) {
 			}
 			return nil, errors.New("address registration invalid message")
 		} else {
+			if msg.Sender.Address == ks.conf.Address.Domain {
+				return nil, errors.New("missing or wrong domain in address registration message")
+			}
 			// Configuring address information
 			o.address.Id = msg.Sender.Id
 			o.address.Address = msg.Sender.Address
@@ -65,9 +68,6 @@ func NewAddressObs(conn *websocket.Conn, ks *KiteServer) (*AddressObs, error) {
 			}
 			if o.address.Type == "" {
 				o.address.Type = "*"
-			}
-			if o.address.Domain == "" {
-				o.address.Domain = "*"
 			}
 
 			// Checking if address is authorized (api key and enabled)
