@@ -94,7 +94,7 @@ func NewAddressObs(conn *websocket.Conn, ks *KiteServer) (*AddressObs, error) {
 							data := make(map[string]string)
 							data["Message"] = fmt.Sprintf("new address %s try to connect server, activation code %s", addressAuth.Name, addressAuth.ActivationCode)
 							ks.sendToTelegram(data["Message"])
-							ks.address.Notify(kite.Event{Data: data["Message"]}, new(AddressObs), kite.Address{Domain: "*", Type: "*", Host: "*", Address: "*", Id: "*"})
+							ks.address.Notify(kite.Event{Data: data["Message"]}, new(AddressObs), kite.Address{Domain: ks.conf.Address.Domain, Type: "*", Host: "*", Address: "*", Id: "*"})
 							return nil, errors.New(data["Message"])
 						}
 					}
