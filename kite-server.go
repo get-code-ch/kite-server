@@ -87,6 +87,10 @@ func (ks *KiteServer) waitMessage(this *AddressObs) {
 						ks.address.Notify(kite.Event{Data: logs, Action: kite.A_LOG}, this, message.Sender)
 					}
 					break
+				case kite.A_DISCOVER:
+					if endpoints := ks.discover(); endpoints != nil {
+						ks.address.Notify(kite.Event{Data: endpoints, Action: kite.A_INFORM}, this, message.Sender)
+					}
 				case kite.A_SETUP:
 					if err := ks.setupServer(message, this); err != nil {
 						ks.address.Notify(kite.Event{Data: fmt.Sprintf("Error provisioning setup -> %s", err)}, this, message.Sender)
@@ -158,7 +162,7 @@ func (ks *KiteServer) wsHandler(w http.ResponseWriter, r *http.Request) {
 	this, err := NewAddressObs(conn, ks)
 	if err != nil {
 		log.Printf("address creation error --> %v", err)
-		conn.WriteControl(websocket.CloseMessage, []byte(""),time.Now().Add(10*time.Second))
+		conn.WriteControl(websocket.CloseMessage, []byte(""), time.Now().Add(10*time.Second))
 		conn.Close()
 		return
 	}

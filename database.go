@@ -90,17 +90,16 @@ func (ks *KiteServer) findAddressAuth(address string) (kite.AddressAuth, error) 
 	a.StringToAddress(address)
 
 	regexAddress := `^`
-	regexAddress +=  a.Domain + `\.`
-	regexAddress +=  a.Type.String() + `\.`
-	regexAddress += a.Host +  `\.`
+	regexAddress += a.Domain + `\.`
+	regexAddress += a.Type.String() + `\.`
+	regexAddress += a.Host + `\.`
 	if a.Address == "*" {
 		a.Address = `\*`
 	}
 	regexAddress += `(?:\*|` + a.Address + `)\.\*`
 	regexAddress += `$`
 
-	query := bson.D{{ "name", bson.D{{"$regex", regexAddress}} }}
-
+	query := bson.D{{"name", bson.D{{"$regex", regexAddress}}}}
 
 	if err := addressAuthCollection.FindOne(ctx, query).Decode(&addressAuth); err != nil {
 		return kite.AddressAuth{Name: "", ApiKey: "", Enabled: false}, err
@@ -133,12 +132,11 @@ func (ks *KiteServer) findEndpoint(address kite.Address) ([]kite.Endpoint, error
 	endpointCollection := ks.db.Collection(string(kite.C_ENDPOINT))
 
 	regexAddress := `^`
-	regexAddress +=  address.Domain + `\.`
-	regexAddress +=  kite.H_ENDPOINT.String() + `\.`
-	regexAddress += address.Host +  `\..*$`
+	regexAddress += address.Domain + `\.`
+	regexAddress += kite.H_ENDPOINT.String() + `\.`
+	regexAddress += address.Host + `\..*$`
 
-	query := bson.D{{ "name", bson.D{{"$regex", regexAddress}} }}
-
+	query := bson.D{{"name", bson.D{{"$regex", regexAddress}}}}
 
 	if cursor, err := endpointCollection.Find(ctx, query); err != nil {
 		return nil, err
@@ -150,7 +148,33 @@ func (ks *KiteServer) findEndpoint(address kite.Address) ([]kite.Endpoint, error
 				endpoints = append(endpoints, endpoint)
 			}
 		}
-		return endpoints,nil
+		return endpoints, nil
 	}
 }
 
+func (ks *KiteServer) discover() []kite.Endpoint {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	endpointCollection := ks.db.Collection(string(kite.C_ENDPOINT))
+
+	regexAddress := `^`
+	regexAddress += ks.conf.Address.Domain + `\.`
+	regexAddress += kite.H_ENDPOINT.String() + `\..*$`
+
+	query := bson.D{{"name", bson.D{{"$regex", regexAddress}}}}
+
+	if cursor, err := endpointCollection.Find(ctx, query); err != nil {
+		log.Printf("Error endpoint discover --> %v", err)
+		return nil
+	} else {
+		var endpoints []kite.Endpoint
+		for cursor.Next(ctx) {
+			endpoint := kite.Endpoint{}
+			if err := cursor.Decode(&endpoint); err == nil {
+				endpoints = append(endpoints, endpoint)
+			}
+		}
+		return endpoints
+	}
+}
