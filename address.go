@@ -102,7 +102,7 @@ func NewAddressObs(conn *websocket.Conn, ks *KiteServer) (*AddressObs, error) {
 
 				if !authorized {
 					data := make(map[string]string)
-					data["Message"] = "unauthorized address connection"
+					data["Message"] = fmt.Sprintf("unauthorized address connection (%s)", o.address.String())
 					if closeMessage, err := json.Marshal(kite.Message{Sender: ks.conf.Address, Receiver: o.address, Action: kite.A_REJECTED, Data: data}); err != nil {
 						_ = o.conn.WriteControl(websocket.CloseMessage, closeMessage, time.Now().Add(10*time.Second))
 					} else {
