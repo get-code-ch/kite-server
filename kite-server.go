@@ -172,7 +172,9 @@ func (ks *KiteServer) wsHandler(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 
+	ks.sync.Lock()
 	ks.address.Register(this)
+	ks.sync.Unlock()
 
 	// If client is of type Iot we provisioning configuration of it
 	if this.address.Type == kite.H_IOT {
