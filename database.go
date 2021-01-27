@@ -178,3 +178,65 @@ func (ks *KiteServer) discover() []kite.Endpoint {
 		return endpoints
 	}
 }
+
+func (ks *KiteServer) exportDB() map[string]interface{} {
+	export := make(map[string]interface{})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if collections, err := ks.db.ListCollectionNames(ctx, bson.M{}); err != nil {
+		log.Printf("Error listing DB Collections --> %v", err)
+		return nil
+	} else {
+		for _, name := range collections {
+			collection := ks.db.Collection(name)
+			if cursor, err := collection.Find(ctx, bson.M{}); err == nil {
+				switch name {
+				case "endpoint":
+					var e []kite.Endpoint
+					cursor.All(ctx, &e)
+					export[name] = e
+					//log.Printf("%s: %v\n", name, e)
+					break
+				case "address_auth":
+					var aa []kite.AddressAuth
+					cursor.All(ctx, &aa)
+					//log.Printf("%s: %v\n", name, aa)
+					export[name] = aa
+					break
+				default:
+					log.Printf("exportDB: %s collection ignored", name)
+					break
+				}
+			}
+		}
+		log.Printf("%v", export)
+	}
+	return export
+}
+
+func (ks *KiteServer) importDB(data interface{}) []error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var result []error
+	ok := true
+
+	collections := data.(map[string]interface{})
+	log.Printf("%v", collections)
+
+	for name, collection := range collections {
+		dbCollection := ks.db.Collection(name)
+		if _, err := dbCollection.InsertMany(ctx, collection.([]interface{})); err != nil {
+			log.Printf("importDB: error importing %s --> %v", name, err)
+			result = append(result, err)
+			ok = false
+		}
+	}
+	if ok {
+		return nil
+	} else {
+		return result
+	}
+}

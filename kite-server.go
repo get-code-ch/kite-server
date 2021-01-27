@@ -105,6 +105,16 @@ func (ks *KiteServer) waitMessage(this *AddressObs) {
 						log.Printf("New address activated")
 					}
 					break
+				case kite.A_IMPORT:
+					if err := ks.importDB(message.Data); err == nil {
+						log.Printf("Configuration imported")
+					}
+					break
+				case kite.A_EXPORT:
+					if export := ks.exportDB(); export != nil {
+						ks.address.Notify(kite.Event{Data: export, Action: kite.A_EXPORT}, this, message.Sender)
+					}
+					break
 				default:
 					if message.Receiver.Domain == "telegram" {
 						ks.sendToTelegram(message.Data.(string))
