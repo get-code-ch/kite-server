@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	kite "github.com/get-code-ch/kite-common"
 	"go.mongodb.org/mongo-driver/bson"
@@ -191,22 +192,17 @@ func (ks *KiteServer) exportDB() map[string]interface{} {
 	} else {
 		for _, name := range collections {
 			collection := ks.db.Collection(name)
-			if cursor, err := collection.Find(ctx, bson.M{}); err == nil {
+			// when exported,
+			opts := options.Find().SetProjection(bson.D{{"_id", 0}})
+			if cursor, err := collection.Find(ctx, bson.M{}, opts); err == nil {
 				switch name {
-				case "endpoint":
-					var e []kite.Endpoint
-					cursor.All(ctx, &e)
-					export[name] = e
-					//log.Printf("%s: %v\n", name, e)
-					break
-				case "address_auth":
-					var aa []kite.AddressAuth
-					cursor.All(ctx, &aa)
-					//log.Printf("%s: %v\n", name, aa)
-					export[name] = aa
+				// to ignore a collection in export
+				case "name_of_to_ignore_collection":
 					break
 				default:
-					log.Printf("exportDB: %s collection ignored", name)
+					var c []bson.M
+					cursor.All(ctx, &c)
+					export[name] = c
 					break
 				}
 			}
@@ -216,22 +212,41 @@ func (ks *KiteServer) exportDB() map[string]interface{} {
 	return export
 }
 
-func (ks *KiteServer) importDB(data interface{}) []error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
+func (ks *KiteServer) importDB(data string) []error {
 	var result []error
 	ok := true
 
-	collections := data.(map[string]interface{})
-	log.Printf("%v", collections)
+	collections := make(map[string][]interface{})
 
+	if err := json.Unmarshal([]byte(data), &collections); err != nil {
+		log.Printf("importDB error -> %v", err)
+		result = append(result, err)
+		return result
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	for name, collection := range collections {
-		dbCollection := ks.db.Collection(name)
-		if _, err := dbCollection.InsertMany(ctx, collection.([]interface{})); err != nil {
-			log.Printf("importDB: error importing %s --> %v", name, err)
+		// Testing if data to import are valid, if yes we drop collection and import new data
+		dbCollection := ks.db.Collection(name + "__test_import_")
+		if _, err := dbCollection.InsertMany(ctx, collection); err != nil {
+			log.Printf("importDB: error testing import %s_test --> %v", name, err)
 			result = append(result, err)
 			ok = false
+		} else {
+			_ = dbCollection.Drop(ctx)
+			dbCollection = ks.db.Collection(name)
+			if err := dbCollection.Drop(ctx); err == nil {
+				if _, err := dbCollection.InsertMany(ctx, collection); err != nil {
+					log.Printf("importDB: error importing %s --> %v", name, err)
+					result = append(result, err)
+					ok = false
+				}
+			} else {
+				log.Printf("importDB: error importing %s --> %v", name, err)
+				result = append(result, err)
+				ok = false
+			}
 		}
 	}
 	if ok {

@@ -106,7 +106,7 @@ func (ks *KiteServer) waitMessage(this *AddressObs) {
 					}
 					break
 				case kite.A_IMPORT:
-					if err := ks.importDB(message.Data); err == nil {
+					if err := ks.importDB(message.Data.(string)); err == nil {
 						log.Printf("Configuration imported")
 					}
 					break
