@@ -42,7 +42,6 @@ func (ks *KiteServer) setupServer(msg kite.Message, this *AddressObs) error {
 	ks.connectDatabase()
 	ks.configureTelegram()
 
-
 	ks.wg.Add(1)
 	ks.startServer()
 	ks.sendToTelegram("Server is provisioned and is restarting...")
